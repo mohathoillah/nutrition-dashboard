@@ -32,7 +32,7 @@ def render_data_table(df, value_column, indicator_label, selected_year):
         hide_index=True
     )
 
-    csv = table_df.to_csv(index=False).encode("utf-8")
+#    csv = table_df.to_csv(index=False).encode("utf-8")
 
 # Disable the download button for now, as it may not be necessary for the current use case
 #    st.download_button(
