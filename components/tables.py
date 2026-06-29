@@ -34,7 +34,8 @@ def render_data_table(df, value_column, indicator_label, selected_year):
 
     csv = table_df.to_csv(index=False).encode("utf-8")
 
-    st.download_button(
+# Disable the download button for now, as it may not be necessary for the current use case
+   # st.download_button(
         label="Download filtered data as CSV",
         data=csv,
         file_name=f"{indicator_label.lower().replace(' ', '_')}_{selected_year}_filtered.csv",
