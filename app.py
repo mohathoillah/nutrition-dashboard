@@ -68,6 +68,7 @@ def main():
 
     st.divider()
 
+# Disable to import the data table
     # render_data_table(
     #     df=filtered_df,
     #     value_column=value_column,
