@@ -68,12 +68,12 @@ def main():
 
     st.divider()
 
-    render_data_table(
-        df=filtered_df,
-        value_column=value_column,
-        indicator_label=indicator_label,
-        selected_year=selected_year
-    )
+    # render_data_table(
+    #     df=filtered_df,
+    #     value_column=value_column,
+    #     indicator_label=indicator_label,
+    #     selected_year=selected_year
+    # )
 
 
 if __name__ == "__main__":
