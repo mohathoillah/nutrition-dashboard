@@ -120,34 +120,37 @@ def main():
     #     selected_year=selected_year
     # )
 
+    # Adding a footer with a link to the GitHub repository
+    st.markdown("---")
 
-if __name__ == "__main__":
-    main()
+    col1, col2 = st.columns([2, 1])
 
-# Adding a footer with a link to the GitHub repository
-st.markdown("---")
-
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.markdown("""
+    with col1:
+        st.markdown("""
 ### Data Sources
 
-- **Child Nutrition Status (2024)**  
+- **Child Nutrition Status (2024)**
   Ministry of Health, Republic of Indonesia
 
-- **Administrative Boundary:**  
+- **Administrative Boundary:**
   [Indonesia514 GeoJSON Repository](https://github.com/quarcs-lab/indonesia514)
 
-- **Indonesia514 Project:**  
+- **Indonesia514 Project:**
   https://quarcs-lab.github.io/indonesia514/
 ---
 """)
 
-with col2:
-    st.markdown("""
-### Version: 1.1
+    with col2:
+        st.markdown("""
+### Version: 1.3
 
-Developed by **Moh. Athoillah**  
+Developed by **Moh. Athoillah**
 Graduate School of International Development, Nagoya University
 """)
+
+
+pg = st.navigation([
+    st.Page(main, title="Main Dashboard", icon="📊", default=True),
+    st.Page("pages/1_Spatial_Analysis.py", title="Spatial Analysis", icon="🗺️"),
+])
+pg.run()

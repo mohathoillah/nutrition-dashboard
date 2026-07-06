@@ -2,7 +2,7 @@
 
 A modular Streamlit dashboard for exploratory analysis of child nutrition status in Indonesia. Development follows the phased plan in [nutrition_dashboard_development_phases.md](nutrition_dashboard_development_phases.md) — see that file for detailed status per phase.
 
-## Current features (v1.1)
+## Current features (v1.3)
 
 **Filters (sidebar, applied via an "Apply Filters" button):**
 
@@ -26,6 +26,11 @@ A modular Streamlit dashboard for exploratory analysis of child nutrition status
 
 - Stunting Change Ranking: pick a comparison period (2013→2018, 2018→2024, 2013→2024), see Top-15 "Most Improved" and "Most Deteriorated" districts/cities
 
+**Spatial Analysis page (`pages/1_Spatial_Analysis.py`, separate from the main dashboard page):**
+
+- Pick a year (2013/2018/2024) and a spatial weight matrix (Queen/Rook contiguity, K-nearest neighbors, distance-band), then explore Global Moran's I, a LISA cluster map, a Getis-Ord Gi* hotspot map, and a neighbor explorer — computed on the full national dataset, independent of the main page's sidebar island/province filters
+- Uses Streamlit's native multi-page navigation (`pages/` directory), so it only loads/computes when the user actually opens it, rather than on every rerun of the main page
+
 **Currently disabled (built, not wired into the app):**
 
 - Data table with CSV download (`components/tables.py`) — intentionally left off
@@ -42,6 +47,8 @@ nutrition-dashboard/
 ├── nutrition_dashboard_development_phases.md
 ├── data/
 │   └── stunting_spatial.csv
+├── pages/
+│   └── 1_Spatial_Analysis.py
 ├── components/
 │   ├── sidebar.py
 │   ├── kpi_cards.py
@@ -49,11 +56,13 @@ nutrition-dashboard/
 │   ├── charts.py
 │   ├── comparisons.py
 │   ├── trends.py
-│   └── tables.py
+│   ├── tables.py
+│   └── spatial.py
 ├── utils/
 │   ├── loader.py
 │   ├── filters.py
-│   └── colors.py
+│   ├── colors.py
+│   └── spatial.py
 └── .streamlit/
     └── config.toml
 ```

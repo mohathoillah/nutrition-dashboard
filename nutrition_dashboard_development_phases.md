@@ -6,12 +6,15 @@ This document outlines the next development phases for the Nutrition Status Dash
 
 # Current Status
 
-_Last reviewed: 2026-07-06._
+_Last reviewed: 2026-07-07 (Spatial Analysis moved to its own page)._
 
 Phase 1 is functionally complete and deployed locally (v1.1), with some
 deliberate deviations from the original spec (see notes inline below). Parts
-of Phase 2 and Phase 3 have also been pulled forward since they were cheap to
-build on top of the existing data:
+of Phase 2, Phase 3, and now Phase 4 have also been pulled forward since they
+were cheap to build on top of the existing data, or — for Phase 4 — because
+Stunting is the only indicator with multi-year data worth analyzing
+spatially, and the user chose to jump ahead to it directly (skipping the
+remaining Phase 2/3 gaps for now):
 
 - Streamlit project structure, local dev environment, GitHub workflow
 - Full Phase 1 feature set (filters, KPI cards, map, ranking, distribution) —
@@ -21,6 +24,10 @@ build on top of the existing data:
   (3.5) are done, combined into one "Stunting Change Ranking" section;
   National Trend (3.1) and Provincial Trend (3.2) were built but are
   currently disabled by request (see Phase 3 notes)
+- From Phase 4: all five sub-features (Spatial Weight Matrix, Global Moran's
+  I, LISA Cluster Map, Hotspot Analysis, Neighbor Explorer) are done, scoped
+  to Stunting only, on its own page (`pages/1_Spatial_Analysis.py`) — see
+  Phase 4 notes
 - Still open: Province Comparison (2.1), Indicator Comparison (2.3),
   Correlation Matrix (2.4), District/City Trend (3.3)
 
@@ -278,6 +285,30 @@ The dashboard can identify where stunting improved, worsened, or remained persis
 
 # Phase 4 — Spatial Analysis Dashboard
 
+**Status: ✅ Done, scoped to Stunting only** — `utils/spatial.py` +
+`components/spatial.py`. Originally wired into `app.py` directly below
+Stunting Change Ranking; moved on 2026-07-07 to its own page,
+`pages/1_Spatial_Analysis.py`, via Streamlit's native multi-page app
+support (the `pages/` directory convention). Reason for the move: since
+this section ignores the sidebar's island/province filters anyway (it
+always operates on the full national dataset), it didn't need to live on
+the same page as the filtered main dashboard — and keeping it there meant
+its heavy map figures got rebuilt/reserialized on every rerun triggered by
+unrelated sidebar interactions. As a separate page, it only loads/computes
+when the user actually navigates to it.
+
+Built ahead of the remaining Phase 2/3 gaps per user request (2026-07-07):
+Stunting is the only indicator with multi-year data (2013/2018/2024), so it's
+the only one worth analyzing spatially over time right now. All spatial
+statistics (weights, Moran's I, LISA, Getis-Ord Gi*) are computed on the full
+national 514-district dataset, independent of the main dashboard's
+island/province filters — mirroring the existing `national_rank` pattern —
+so contiguity relationships aren't cut off at a filter boundary. The page
+has its own controls: a year radio (2013/2018/2024) and a weight-matrix
+method selectbox, decoupled from the main page's own year selector.
+
+New dependencies: `geopandas`, `libpysal`, `esda`.
+
 ## Objective
 
 Add exploratory spatial data analysis to detect geographic clustering.
@@ -286,39 +317,59 @@ Add exploratory spatial data analysis to detect geographic clustering.
 
 ### 1. Spatial Weight Matrix
 
-Options:
+**Status: ✅ Done.** All four options implemented via `libpysal`, selectable
+in the UI:
 
 - Queen contiguity
 - Rook contiguity
-- K-nearest neighbors
-- Distance-based weights
+- K-nearest neighbors (k slider, 4–10, default 8)
+- Distance-based weights (threshold slider, 50–500km, default 200km, using
+  great-circle/arc distance between district representative points)
+
+Indonesia's archipelago geography means Queen/Rook contiguity leaves ~33
+districts as isolates (small/remote islands with no shared land border) —
+surfaced to the user as a warning with a suggestion to switch to
+KNN/Distance-band if every unit needs at least one neighbor.
 
 ### 2. Global Moran's I
 
-Display:
-
-- Moran's I statistic
-- Expected value
-- P-value
-- Interpretation
+**Status: ✅ Done.** Displays Moran's I, Expected I, z-score, and p-value
+(999 permutations), plus an auto-generated interpretation sentence. Observed
+values on 2024 stunting are strongly significant (I ≈ 0.43–0.52 depending on
+weight method, p = 0.001), consistent with known regional clustering of
+stunting in eastern Indonesia.
 
 ### 3. LISA Cluster Map
 
-Classify districts/cities into:
-
-- High-High
-- Low-Low
-- High-Low
-- Low-High
-- Not significant
+**Status: ✅ Done.** Classifies each district into High-High, Low-High,
+Low-Low, High-Low, Not Significant (p ≥ 0.05), or No Neighbors (isolates
+under contiguity weights) — shown as a categorical choropleth map.
 
 ### 4. Hotspot Analysis
 
-Identify spatial hotspots of high nutrition risk.
+**Status: ✅ Done.** Getis-Ord Gi* (with the location itself included, i.e.
+Gi*, not Gi), classified into Hot Spot / Cold Spot at 90/95/99% confidence,
+Not Significant, or No Neighbors — shown as a categorical choropleth map.
 
 ### 5. Neighbor Explorer
 
-Allow user to select one district/city and inspect neighboring districts/cities.
+**Status: ✅ Done.** District/city selectbox, a table of its neighbors under
+the current weight matrix, and a map highlighting the selected district and
+its neighbors against the rest of the country.
+
+> **Performance note:** the district boundary GeoJSON is a full-resolution
+> coastline file (~54MB parsed). Rendering it directly for 3 additional
+> categorical maps (LISA, hotspot, neighbor explorer) on top of the existing
+> national map made every full-page rerun extremely slow (a single
+> uncached choropleth figure serialized to ~225MB). Fixed by simplifying
+> geometry (Douglas-Peucker, tolerance ≈ 0.01°/~1.1km, `preserve_topology`)
+> for the three new **display** maps only — weight construction
+> (Queen/Rook/KNN/Distance-band) still uses full-precision geometry so
+> adjacency results are unaffected. This cut the map payload to ~3.7MB.
+> Each unique (year, weight method, k/threshold) combination is cached via
+> `st.cache_resource`, so the ~10–30s cost (permutation-based Moran/LISA/Gi*
+> on 514 units, plus first-time geometry simplification) is only paid once
+> per combination per session, not on every rerun.
 
 ## Phase 4 Output
 
@@ -467,7 +518,7 @@ The dashboard becomes usable for presentations, reports, and research communicat
 
 # Recommended Implementation Order
 
-_Updated 2026-07-06 to reflect actual progress — see Phase 1–3 status notes above._
+_Updated 2026-07-07 to reflect actual progress — see Phase 1–4 status notes above._
 
 ## Short-Term Priority
 
@@ -480,7 +531,7 @@ _Updated 2026-07-06 to reflect actual progress — see Phase 1–3 status notes 
 ## Medium-Term Priority
 
 1. ⬜ Add correlation analysis — not started (quick win, no new data needed)
-2. ⬜ Add spatial analysis
+2. ✅ Add spatial analysis — done, scoped to Stunting only (see Phase 4)
 3. ⬜ Add risk factor integration
 
 ## Long-Term Priority
