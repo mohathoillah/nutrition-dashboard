@@ -6,19 +6,29 @@ This document outlines the next development phases for the Nutrition Status Dash
 
 # Current Status
 
-The dashboard currently has the basic Phase 1 foundation:
+_Last reviewed: 2026-07-06._
 
-- Streamlit project structure
-- Local development environment in VS Code
-- GitHub repository workflow
-- Basic dashboard app
-- Nutrition status data loaded
-- Initial filter structure
-- Local Streamlit execution
+Phase 1 is functionally complete and deployed locally (v1.1), with some
+deliberate deviations from the original spec (see notes inline below). Parts
+of Phase 2 and Phase 3 have also been pulled forward since they were cheap to
+build on top of the existing data:
+
+- Streamlit project structure, local dev environment, GitHub workflow
+- Full Phase 1 feature set (filters, KPI cards, map, ranking, distribution) —
+  see Phase 1 notes for deviations
+- From Phase 2: Island Comparison (2.2) is done
+- From Phase 3: Change Analysis (3.4) and Improvement/Deterioration Ranking
+  (3.5) are done, combined into one "Stunting Change Ranking" section;
+  National Trend (3.1) and Provincial Trend (3.2) were built but are
+  currently disabled by request (see Phase 3 notes)
+- Still open: Province Comparison (2.1), Indicator Comparison (2.3),
+  Correlation Matrix (2.4), District/City Trend (3.3)
 
 ---
 
 # Phase 1 — Exploratory Nutrition Dashboard
+
+**Status: ✅ Done (with deviations noted below)**
 
 ## Objective
 
@@ -41,6 +51,11 @@ Required filters:
 - Island filter
 - Province filter
 - Reset filter button
+
+> **Deviation:** Island and Province are multi-select (not single-select), and
+> all filters sit inside an "Apply Filters" form so nothing recomputes until
+> the user submits — this wasn't in the original spec but was requested to
+> avoid re-rendering on every widget tweak.
 
 ### 2. KPI Cards
 
@@ -66,6 +81,10 @@ Map requirements:
 - Value
 - National rank
 
+> **Note:** Was temporarily disabled to speed up page load, then re-enabled.
+> National rank is computed from the full national dataset (not the filtered
+> subset), so it stays accurate regardless of active island/province filters.
+
 ### 4. Ranking Chart
 
 Add ranking visualisation:
@@ -73,6 +92,10 @@ Add ranking visualisation:
 - Top 15 districts/cities
 - Bottom 15 districts/cities
 - Sort by selected nutrition indicator
+
+> **Enhancement:** Bars are colored by province (validated 8-color categorical
+> palette, overflow folds into a gray "Other" bucket), with a caption showing
+> the per-province district count breakdown.
 
 ### 5. Distribution Chart
 
@@ -93,6 +116,12 @@ Add filtered data table:
 - Rank
 - Download CSV button
 
+> **Deviation:** Intentionally disabled per user decision (2026-07-06). The
+> component (`components/tables.py`) is fully built and spec-complete
+> (including the rank column) but not wired into `app.py`. Re-enable only if
+> asked again — it was toggled on/off several times in git history before
+> settling on "off."
+
 ## Phase 1 Output
 
 A clean, stable, and interactive dashboard for basic exploratory analysis.
@@ -100,6 +129,8 @@ A clean, stable, and interactive dashboard for basic exploratory analysis.
 ---
 
 # Phase 2 — Comparative Analytics
+
+**Status: 🟡 Partially done — Island Comparison shipped, rest not started**
 
 ## Objective
 
@@ -109,17 +140,31 @@ Add comparative analysis across districts, provinces, islands, and indicators.
 
 ### 1. Province Comparison
 
+**Status: Not started.**
+
 - Average indicator by province
 - Top and bottom provinces
 - Province-level ranking chart
 
+Note: the existing district-level ranking chart (Phase 1.4) already colors
+bars by province, which covers part of the visual grouping need, but there is
+no dedicated province-aggregated bar/ranking chart yet — this is the next
+logical quick win, reusing the same groupby pattern as Island Comparison.
+
 ### 2. Island Comparison
+
+**Status: ✅ Done** (`components/comparisons.py`)
 
 - Average indicator by island
 - Island-level bar chart
-- Comparison across Java, Sumatra, Kalimantan, Sulawesi, Bali-Nusa Tenggara, Maluku, Papua
+- Comparison across Java, Sumatera, Kalimantan, Sulawesi, Bali-Nusa Tenggara, Maluku, Papua
+
+Works for whichever nutrition indicator is currently selected in the sidebar
+(not stunting-only), and respects the active island/province filters.
 
 ### 3. Indicator Comparison
+
+**Status: Not started.**
 
 Add charts comparing:
 
@@ -128,7 +173,13 @@ Add charts comparing:
 - Underweight vs wasting
 - Wasting vs overweight
 
+Quick win: all five indicators already share a common 2024 snapshot in the
+loaded data, so this needs no new data — just scatter plots between column
+pairs.
+
 ### 4. Correlation Matrix
+
+**Status: Not started.**
 
 Add correlation matrix among nutrition indicators:
 
@@ -138,6 +189,8 @@ Add correlation matrix among nutrition indicators:
 - Severe wasting
 - Overweight
 
+Quick win, same reason as above — one `df.corr()` call plus a heatmap.
+
 ## Phase 2 Output
 
 The dashboard can be used not only to inspect one indicator, but also to compare patterns across indicators and regions.
@@ -145,6 +198,8 @@ The dashboard can be used not only to inspect one indicator, but also to compare
 ---
 
 # Phase 3 — Stunting Trend Dashboard
+
+**Status: 🟡 Partially done — 3.1/3.2 built but disabled, 3.4/3.5 shipped, 3.3 not started**
 
 ## Objective
 
@@ -154,21 +209,44 @@ Use multi-year stunting data to analyze changes over time.
 
 ### 1. National Trend
 
+**Status: Built, currently disabled.**
+
 Show average stunting prevalence for:
 
 - 2013
 - 2018
 - 2024
 
+A one-line text summary of this (e.g. "2013: 41.2% → 2018: 33.1% → 2024:
+27.8%") was added under the indicator description, then removed per user
+request (2026-07-06) — the user wants the top-of-page description area kept
+free of stunting-specific content.
+
 ### 2. Provincial Trend
+
+**Status: Built, currently disabled.**
 
 Allow user to select province and view stunting trend.
 
+Implemented as `render_stunting_trend()` in `components/trends.py` — a line
+chart of average stunting per province across 2013/2018/2024, highlighting
+the top 8 highest-2024-stunting provinces in color and graying out the rest.
+Disabled in `app.py` (commented out) per user request in favor of the
+descriptive-text approach above, which was then also removed. The function is
+intact and ready to re-enable if wanted again.
+
 ### 3. District/City Trend
+
+**Status: Not started.**
 
 Allow user to select district/city and view stunting trend.
 
+Needs a new selectbox (district picker) — otherwise the same line-chart
+pattern as Provincial Trend, just at finer granularity.
+
 ### 4. Change Analysis
+
+**Status: ✅ Done**, combined with 3.5 below.
 
 Calculate:
 
@@ -178,10 +256,19 @@ Calculate:
 
 ### 5. Improvement and Deterioration Ranking
 
+**Status: ✅ Done** — `render_stunting_change_ranking()` in `components/trends.py`.
+
 Show:
 
 - Districts/cities with largest decline in stunting
 - Districts/cities with largest increase in stunting
+
+Implemented as one "Stunting Change Ranking" section: a radio button picks
+the comparison period (2013→2018, 2018→2024, 2013→2024), then two tabs show
+Top-15 "Most Improved" and "Most Deteriorated" district rankings, plus a
+caption with the average change. Only shown when the sidebar's Nutrition
+status is set to Stunting (hidden for other indicators, since they have no
+multi-year data).
 
 ## Phase 3 Output
 
@@ -380,25 +467,27 @@ The dashboard becomes usable for presentations, reports, and research communicat
 
 # Recommended Implementation Order
 
+_Updated 2026-07-06 to reflect actual progress — see Phase 1–3 status notes above._
+
 ## Short-Term Priority
 
-1. Finish Phase 1
-2. Deploy Phase 1 to Streamlit Community Cloud
-3. Improve UI and stability
-4. Add province and island comparison
-5. Add stunting trend analysis
+1. ✅ Finish Phase 1
+2. ⬜ Deploy Phase 1 to Streamlit Community Cloud — not done yet
+3. 🟡 Improve UI and stability — ongoing (header color, section descriptions added)
+4. 🟡 Add province and island comparison — island done, province not started
+5. 🟡 Add stunting trend analysis — change/ranking done, trend charts built but disabled
 
 ## Medium-Term Priority
 
-1. Add correlation analysis
-2. Add spatial analysis
-3. Add risk factor integration
+1. ⬜ Add correlation analysis — not started (quick win, no new data needed)
+2. ⬜ Add spatial analysis
+3. ⬜ Add risk factor integration
 
 ## Long-Term Priority
 
-1. Add composite index
-2. Add CIAF module
-3. Add reporting and export tools
+1. ⬜ Add composite index
+2. ⬜ Add CIAF module
+3. ⬜ Add reporting and export tools
 
 ---
 
