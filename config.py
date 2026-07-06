@@ -47,6 +47,35 @@ NUTRITION_OPTIONS = {
     }
 }
 
+NUTRITION_DEFINITIONS = {
+    "Stunting": (
+        "Stunting reflects chronic malnutrition, measured as height-for-age "
+        "below -2 SD from the WHO Child Growth Standards median. It signals "
+        "long-term inadequate nutrition, repeated infection, or poor "
+        "psychosocial stimulation during early childhood."
+    ),
+    "Underweight": (
+        "Underweight is measured as weight-for-age below -2 SD from the WHO "
+        "median. It captures a mix of both chronic (stunting-like) and acute "
+        "(wasting-like) undernutrition."
+    ),
+    "Wasting": (
+        "Wasting reflects acute malnutrition, measured as weight-for-height "
+        "below -2 SD from the WHO median. It often signals recent and severe "
+        "weight loss due to illness or inadequate food intake."
+    ),
+    "Severe Wasting": (
+        "Severe Wasting is weight-for-height below -3 SD from the WHO "
+        "median, indicating a life-threatening form of acute malnutrition "
+        "that requires urgent treatment."
+    ),
+    "Overweight": (
+        "Overweight is measured as weight-for-height above +2 SD from the "
+        "WHO median, reflecting excess weight relative to height among "
+        "children under five."
+    )
+}
+
 BASE_COLUMNS = [
     "districtID",
     "district_en",

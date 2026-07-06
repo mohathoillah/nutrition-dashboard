@@ -24,6 +24,8 @@ def render_choropleth_map(
         + ": "
         + df[value_column].round(2).astype(str)
         + "%"
+        + "<br>National rank: "
+        + df["national_rank"].astype(str)
     )
 
     fig = go.Figure(

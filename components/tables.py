@@ -14,7 +14,8 @@ def render_data_table(df, value_column, indicator_label, selected_year):
             "district_en",
             "province_en",
             "island_en",
-            value_column
+            value_column,
+            "national_rank"
         ]
     ].rename(
         columns={
@@ -22,7 +23,8 @@ def render_data_table(df, value_column, indicator_label, selected_year):
             "district_en": "District/City",
             "province_en": "Province",
             "island_en": "Island",
-            value_column: f"{indicator_label} {selected_year} (%)"
+            value_column: f"{indicator_label} {selected_year} (%)",
+            "national_rank": "National Rank"
         }
     )
 

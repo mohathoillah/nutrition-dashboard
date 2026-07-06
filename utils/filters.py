@@ -18,19 +18,20 @@ def get_selected_column(selections):
 
 
 def apply_filters(df, selections, value_column):
-    filtered_df = df.copy()
-
-    if selections["island"] != "All Islands":
-        filtered_df = filtered_df[filtered_df["island_en"] == selections["island"]]
-
-    if selections["province"] != "All Provinces":
-        filtered_df = filtered_df[filtered_df["province_en"] == selections["province"]]
-
-    if value_column not in filtered_df.columns:
+    if value_column not in df.columns:
         st.error(f"Column not found: {value_column}")
         st.stop()
 
-    filtered_df = filtered_df.dropna(subset=[value_column])
+    filtered_df = df.dropna(subset=[value_column]).copy()
+    filtered_df["national_rank"] = (
+        filtered_df[value_column].rank(method="min", ascending=False).astype(int)
+    )
+
+    if selections["islands"]:
+        filtered_df = filtered_df[filtered_df["island_en"].isin(selections["islands"])]
+
+    if selections["provinces"]:
+        filtered_df = filtered_df[filtered_df["province_en"].isin(selections["provinces"])]
 
     st.session_state["color_scale"] = selections["color_scale"]
 
