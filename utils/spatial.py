@@ -26,10 +26,10 @@ ALPHA = 0.05
 # Degrees (~1.1km at the equator). The source boundary file is a
 # full-resolution coastline (~50MB) meant for close-up viewing; at the
 # country-wide zoom level used here that detail is imperceptible but makes
-# every map render/serialize far more data than necessary. Weight
-# construction (Queen/Rook/KNN/distance) still uses the un-simplified
-# geometry so adjacency and centroid results aren't affected — only the
-# map *display* geometry is simplified.
+# every map render/serialize far more data than necessary, and pushes
+# weight construction (Queen/Rook especially) well past 1GB of RAM — enough
+# to OOM on Streamlit Community Cloud's free tier. Geometry is simplified
+# once, right after load, before it's used for anything.
 MAP_SIMPLIFY_TOLERANCE = 0.01
 
 
@@ -40,6 +40,7 @@ def _build_gdf(value_column):
     gdf = gpd.GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
     gdf = gdf.merge(df, on="district_en", how="inner")
     gdf = gdf.dropna(subset=[value_column]).reset_index(drop=True)
+    gdf["geometry"] = gdf.geometry.simplify(MAP_SIMPLIFY_TOLERANCE, preserve_topology=True)
     return gdf
 
 
@@ -93,7 +94,10 @@ def _classify_hotspot(z, p_sim):
     return f"{'Hot Spot' if z > 0 else 'Cold Spot'} ({tier})"
 
 
-@st.cache_resource(show_spinner="Building spatial weights and running spatial statistics...")
+@st.cache_resource(
+    show_spinner="Building spatial weights and running spatial statistics...",
+    max_entries=8,
+)
 def get_spatial_analysis(value_column, method, k=8, threshold_km=200, permutations=999):
     gdf = _build_gdf(value_column)
     w = _build_weights(gdf, method, k=k, threshold_km=threshold_km)
@@ -120,8 +124,7 @@ def get_spatial_analysis(value_column, method, k=8, threshold_km=200, permutatio
         "max_neighbors": int(cardinalities.max()),
     }
 
-    simplified_geometry = gdf.geometry.simplify(MAP_SIMPLIFY_TOLERANCE, preserve_topology=True)
-    map_gdf = gpd.GeoDataFrame({"district_en": gdf["district_en"]}, geometry=simplified_geometry, crs=gdf.crs)
+    map_gdf = gpd.GeoDataFrame({"district_en": gdf["district_en"]}, geometry=gdf.geometry, crs=gdf.crs)
 
     return {
         "gdf": gdf,
