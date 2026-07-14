@@ -23,15 +23,6 @@ LISA_LABELS = {1: "High-High", 2: "Low-High", 3: "Low-Low", 4: "High-Low"}
 SEED = 12345
 ALPHA = 0.05
 
-# Degrees (~1.1km at the equator). The source boundary file is a
-# full-resolution coastline (~50MB) meant for close-up viewing; at the
-# country-wide zoom level used here that detail is imperceptible but makes
-# every map render/serialize far more data than necessary, and pushes
-# weight construction (Queen/Rook especially) well past 1GB of RAM — enough
-# to OOM on Streamlit Community Cloud's free tier. Geometry is simplified
-# once, right after load, before it's used for anything.
-MAP_SIMPLIFY_TOLERANCE = 0.01
-
 
 def _build_gdf(value_column):
     df = load_data()
@@ -40,7 +31,6 @@ def _build_gdf(value_column):
     gdf = gpd.GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
     gdf = gdf.merge(df, on="district_en", how="inner")
     gdf = gdf.dropna(subset=[value_column]).reset_index(drop=True)
-    gdf["geometry"] = gdf.geometry.simplify(MAP_SIMPLIFY_TOLERANCE, preserve_topology=True)
     return gdf
 
 

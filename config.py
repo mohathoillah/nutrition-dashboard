@@ -10,7 +10,12 @@ LOCAL_DATA_PATH = "data/stunting_spatial.csv"
 
 DATA_URL = "https://raw.githubusercontent.com/<USERNAME>/<REPO>/main/data/stunting_spatial.csv"
 
-GEOJSON_URL = "https://raw.githubusercontent.com/quarcs-lab/indonesia514/main/maps/mapIndonesia514_new.geojson"
+# Simplified (tolerance 0.01deg, ~1.1km) and stripped to just district_en +
+# geometry, generated from quarcs-lab/indonesia514's full-resolution (~50MB)
+# coastline file. Bundled locally instead of fetched at runtime: downloading
+# and JSON-parsing the full file pushed the app's memory past 1GB and
+# crashed it on Streamlit Community Cloud's free tier.
+GEOJSON_PATH = "data/districts_simplified.geojson"
 
 
 # -----------------------------

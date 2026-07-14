@@ -1,8 +1,9 @@
-import requests
+import json
+
 import pandas as pd
 import streamlit as st
 
-from config import DATA_SOURCE, DATA_URL, LOCAL_DATA_PATH, GEOJSON_URL, BASE_COLUMNS
+from config import DATA_SOURCE, DATA_URL, LOCAL_DATA_PATH, GEOJSON_PATH, BASE_COLUMNS
 
 
 @st.cache_data
@@ -22,6 +23,5 @@ def load_data():
 
 @st.cache_data
 def load_geojson():
-    response = requests.get(GEOJSON_URL)
-    response.raise_for_status()
-    return response.json()
+    with open(GEOJSON_PATH) as f:
+        return json.load(f)
