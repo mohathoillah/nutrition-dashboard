@@ -1,4 +1,5 @@
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from config import NUTRITION_OPTIONS
@@ -30,6 +31,10 @@ HOTSPOT_ORDER = list(HOTSPOT_COLORS.keys())
 
 MAP_CENTER = {"lat": -2.5, "lon": 118}
 MAP_ZOOM = 3.5
+
+SCATTER_GRID = "#e6e9ec"
+SCATTER_GUIDE = "#9aa0a6"
+SCATTER_FIT = "#333333"
 
 
 def _categorical_choropleth(gdf, geo_interface, value_column, color_column, color_map, category_order, legend_title):
@@ -153,6 +158,98 @@ def _render_global_moran(moran_global, year):
         )
 
 
+def _render_moran_scatter(gdf, moran_fit, moran_global, summary, value_column, year):
+    st.caption(
+        "Each district/city against its own neighborhood: standardized "
+        "stunting on the x-axis, the neighbors' average (spatial lag) on the "
+        "y-axis. The slope of the fitted line is Moran's I made visible, and "
+        "the quadrants are the LISA classes — upper-right and lower-left hold "
+        "districts that resemble their neighbors, the other two hold spatial "
+        "outliers."
+    )
+
+    fig = px.scatter(
+        gdf,
+        x="moran_z",
+        y="moran_lag",
+        color="lisa_cluster",
+        color_discrete_map=LISA_COLORS,
+        category_orders={"lisa_cluster": LISA_ORDER},
+        hover_name="district_en",
+        hover_data=["province_en", value_column],
+        labels={
+            "moran_z": f"Stunting {year} (standardized)",
+            "moran_lag": "Neighborhood average (spatial lag)",
+            "lisa_cluster": "LISA Cluster",
+            value_column: f"Stunting {year} (%)",
+            "province_en": "Province",
+        },
+    )
+    fig.update_traces(marker=dict(size=9, line=dict(width=1, color="#ffffff")))
+
+    slope = moran_fit["slope"]
+    intercept = moran_fit["intercept"]
+    x_edges = [gdf["moran_z"].min(), gdf["moran_z"].max()]
+    fig.add_trace(
+        go.Scatter(
+            x=x_edges,
+            y=[slope * x + intercept for x in x_edges],
+            mode="lines",
+            line=dict(color=SCATTER_FIT, width=2),
+            name=f"Fitted slope ({slope:.3f})",
+            hoverinfo="skip",
+        )
+    )
+
+    # Quadrant boundaries: both axes are mean-centered, so zero is the divide.
+    fig.add_hline(y=0, line_width=1, line_dash="dot", line_color=SCATTER_GUIDE)
+    fig.add_vline(x=0, line_width=1, line_dash="dot", line_color=SCATTER_GUIDE)
+
+    for x_paper, y_paper, x_anchor, y_anchor, label in [
+        (0.99, 0.99, "right", "top", "High-High"),
+        (0.01, 0.99, "left", "top", "Low-High"),
+        (0.01, 0.01, "left", "bottom", "Low-Low"),
+        (0.99, 0.01, "right", "bottom", "High-Low"),
+    ]:
+        fig.add_annotation(
+            x=x_paper,
+            y=y_paper,
+            xref="paper",
+            yref="paper",
+            xanchor=x_anchor,
+            yanchor=y_anchor,
+            text=label,
+            showarrow=False,
+            font=dict(size=11, color=SCATTER_GUIDE),
+        )
+
+    fig.update_layout(
+        height=520,
+        margin=dict(l=10, r=10, t=20, b=10),
+        legend_title_text="LISA Cluster",
+    )
+    fig.update_xaxes(zeroline=False, gridcolor=SCATTER_GRID, hoverformat=".2f")
+    fig.update_yaxes(zeroline=False, gridcolor=SCATTER_GRID, hoverformat=".2f")
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    n_isolates = summary["n_isolates"]
+    note = (
+        f"Fitted slope {slope:.3f} against a reported Moran's I of "
+        f"{moran_global.I:.3f}."
+    )
+    if n_isolates > 0:
+        note += (
+            f" The two differ because the {n_isolates} districts/cities with no "
+            "neighbors sit at a spatial lag of exactly 0 — the row of points on "
+            "the horizontal guide line. Moran's I rescales by n/S0 to discount "
+            "them, while the fitted line does not."
+        )
+    else:
+        note += " They agree because every district/city has at least one neighbor."
+    st.caption(note)
+
+
 def _render_lisa_map(gdf, geo_interface, value_column, year):
     st.caption(
         "Compares each district/city's stunting value to its neighbors' "
@@ -241,6 +338,9 @@ def render_spatial_analysis():
 
     with tab_moran:
         _render_global_moran(moran_global, year)
+        _render_moran_scatter(
+            gdf, result["moran_fit"], moran_global, summary, value_column, year
+        )
 
     with tab_lisa:
         _render_lisa_map(gdf, geo_interface, value_column, year)

@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 import streamlit as st
 
-from libpysal.weights import Queen, Rook, KNN, DistanceBand
+from libpysal.weights import Queen, Rook, KNN, DistanceBand, lag_spatial
 from esda.moran import Moran, Moran_Local
 from esda.getisord import G_Local
 
@@ -105,6 +105,12 @@ def get_spatial_analysis(value_column, method, k=8, threshold_km=200, permutatio
         _classify_hotspot(z, p) for z, p in zip(hotspot.z_sim, hotspot.p_sim)
     ]
 
+    # Moran scatterplot axes: standardized value against its neighborhood
+    # average. Isolates get a spatial lag of 0 because no neighbor contributes.
+    gdf["moran_z"] = moran_global.z
+    gdf["moran_lag"] = lag_spatial(w, moran_global.z)
+    slope, intercept = np.polyfit(gdf["moran_z"], gdf["moran_lag"], 1)
+
     cardinalities = np.array(list(w.cardinalities.values()))
     summary = {
         "n_units": w.n,
@@ -121,6 +127,7 @@ def get_spatial_analysis(value_column, method, k=8, threshold_km=200, permutatio
         "geo_interface": map_gdf.__geo_interface__,
         "w": w,
         "moran_global": moran_global,
+        "moran_fit": {"slope": float(slope), "intercept": float(intercept)},
         "summary": summary,
     }
 
