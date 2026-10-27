@@ -29,7 +29,7 @@ def render_choropleth_map(
     )
 
     fig = go.Figure(
-        go.Choroplethmapbox(
+        go.Choroplethmap(
             geojson=geojson,
             locations=df["district_en"],
             z=df[value_column],
@@ -45,9 +45,9 @@ def render_choropleth_map(
     )
 
     fig.update_layout(
-        mapbox_style="carto-positron",
-        mapbox_zoom=3.5,
-        mapbox_center={"lat": -2.5, "lon": 118},
+        map_style="carto-positron",
+        map_zoom=3.5,
+        map_center={"lat": -2.5, "lon": 118},
         height=650,
         margin={"r": 0, "t": 0, "l": 0, "b": 0}
     )

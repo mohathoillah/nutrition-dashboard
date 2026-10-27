@@ -33,7 +33,7 @@ MAP_ZOOM = 3.5
 
 
 def _categorical_choropleth(gdf, geo_interface, value_column, color_column, color_map, category_order, legend_title):
-    fig = px.choropleth_mapbox(
+    fig = px.choropleth_map(
         gdf,
         geojson=geo_interface,
         locations="district_en",
@@ -43,7 +43,7 @@ def _categorical_choropleth(gdf, geo_interface, value_column, color_column, colo
         category_orders={color_column: category_order},
         hover_name="district_en",
         hover_data=["province_en", value_column],
-        mapbox_style="carto-positron",
+        map_style="carto-positron",
         zoom=MAP_ZOOM,
         center=MAP_CENTER,
         opacity=0.85,
